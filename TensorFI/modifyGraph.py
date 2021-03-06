@@ -1,39 +1,55 @@
 # ModifyGraph - has the functions to instrument and modify the TensorFlow graph
 
+import logging
+from typing import List, Any, Dict
+
 import numpy as np
 import tensorflow as tf
 
 from TensorFI import injectFault
 
 
-def createFIFunc(opType, inputs, outputTypes, name):
-    "Create a tensorflow operation representing a fault injection node"
+def createFIFunc(
+    operation,  # type: tf.Operation
+    inputs,  # type: List[tf.Tensor]
+    outputTypes,  # type:  List[tf.dtypes.DType]
+    name  # type: str
+):  # type: (...) -> List[tf.Tensor]
+    """Create a tensorflow operation representing a fault injection node"""
     # print "\nCreating FIfunc with ", opType, inputs, outputTypes, name
 
     fiFunc = None
 
     # Check the opType and return the corresponding function as Fifunc
-    if opType == "Cast":
+    if operation.type == "Cast":
         # We have to special case Cast as it's expected to "remember" its type
         # This could be due to a bug in TensorFlow (at least it's not documented)
         fiFunc = injectFault.createInjectFaultCast(outputTypes[0])
 
-    elif opType in injectFault.opTable:
+    elif operation.type in injectFault.opTable:
         # Lookup the opTable and return the corresponding function (injectFault...)
         # This is the default case if there's an injectFault for the function
-        fiFunc = injectFault.opTable[opType]
+        fiFunc = injectFault.opTable[operation.type]
     else:
-        # It's not a known operation, so use the generic injection function
-        fiFunc = injectFault.opTable["Unknown"]
+        # It's not a known operation, so use do not inject.
+        if len(outputTypes) == 0:
+            logging.debug("operator" + str(operation.type) +
+                          " is NOT copied because it doesn't output")
+            return list()
+        else:
+            logging.warning("operator" + str(operation.type) +
+                            " is copied with " + str(outputTypes) +
+                            " output types and " +
+                            str(operation._input_types) + " input types")
+            return [tf.Tensor(operation, value_index=0, dtype=outputTypes[0])]
         # pass
 
     # fiFunc should have been initialized (fiFunc != None)
     if fiFunc is None:
-        raise ValueError("Unknown operation : " + str(opType))
+        raise ValueError("Unknown operation : " + str(operation.type))
 
     # Create a new TensorFlow operator with the corresponding fault injection function
-    res = tf.py_func(fiFunc, inputs, outputTypes, name=name)
-
+    res = tf.numpy_function(fiFunc, inputs, outputTypes, name=name)
     # print "NewOp = ", res
 
     return res
@@ -44,12 +60,11 @@ def createFIFunc(opType, inputs, outputTypes, name):
 
 # Create fault injection equivalents for everything except {Placeholder, Variable, Constant, NoOp}
 def excludeOps(op):
+    # type: (tf.Operation) -> bool
     "Which operations to exclude from the instrumentation"
-    result = False
-    result = result or op.type == "Placeholder"
-    result = result or op.type.startswith("Variable")
-    result = result or op.type == "Const"
-    result = result or op.type == "NoOp"
+    result = (False or op.type == "Placeholder"
+              or op.type.startswith("Variable") or op.type == "Const"
+              or op.type == "NoOp")
     return result
 
 
@@ -57,8 +72,9 @@ def excludeOps(op):
 
 
 def modifyNodes(g, prefix):
-    "Insert nodes in the graph for fault injection corresponding to the original nodes"
-    ops = g.get_operations()
+    # type: (tf.Operation, str) -> Dict[tf.Tensor, tf.Tensor]
+    """Insert nodes in the graph for fault injection corresponding to the original nodes"""
+    ops = g.get_operations()  # type: List[tf.Operation]
 
     fiMap = {
     }  # Keeps track of the mapping between the FI node inserted and the original ones
@@ -101,7 +117,7 @@ def modifyNodes(g, prefix):
                     outputTypeList.append(output.dtype)
 
                 # Create a new fault injection operation with the same inputs and outputs
-                newOp = createFIFunc(op.type, inputs, outputTypeList, name)
+                newOp = createFIFunc(op, inputs, outputTypeList, name)
 
                 # Add newOp's output to the fiMap hashtable for each output of the current node
                 # This will be used later to replace downstream operations that depend on it

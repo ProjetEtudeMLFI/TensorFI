@@ -683,7 +683,7 @@ def injectFaultUnpack(a):
     return res
 
 
-def injectFaultUnstack(a):
+def injectFaultUnstack(a, b, c):
     "Function to call injectFault on unstack"
     # This is the same as Unpack in newer versions of TF
     logging.debug("Calling Operator Unstack " + getArgs(a, b, c))

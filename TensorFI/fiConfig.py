@@ -1,5 +1,6 @@
 # Fault injection configuration information: this is used for the global fault injector
 from enum import Enum
+import logging
 
 import numpy as np
 import yaml
@@ -290,7 +291,8 @@ def yamlFaultParams(pStream):
 
 def configFaultParams(paramFile=None):
     "Return the fault params from different files"
-    if paramFile is not None:
+    if paramFile is None:
+        logging.error("Config file not found")
         return staticFaultParams()
 
     params = {}
