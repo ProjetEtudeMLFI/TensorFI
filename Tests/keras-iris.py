@@ -52,7 +52,7 @@ inputs_train, outputs_train = inputs[train_inds], outputs_cats[train_inds]
 inputs_test, outputs_test = inputs[test_inds], outputs_cats[test_inds]
 
 # TF-Keras Session
-sess = tf.Session()
+sess = tf.compat.v1.Session()
 K.set_session(sess)
 
 init = tf.global_variables_initializer()
@@ -78,7 +78,7 @@ with sess.as_default():
 fi = ti.TensorFI(sess,
                  configFileName=CONFIG_PATH,
                  logDir=LOGS_PATH,
-                 logLevel=logging.WARNING,
+                 logLevel=logging.INFO,
                  disableInjections=True,
                  name="IrisInjection",
                  fiPrefix="fi_")
@@ -96,4 +96,5 @@ with sess.as_default():
     print("Loss/Accuracy (FI) = ", [loss, accuracy])
 
 writer.close()
+sess.close()
 print("Done running instrumented model")

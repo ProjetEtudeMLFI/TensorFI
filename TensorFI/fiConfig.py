@@ -285,7 +285,7 @@ def staticFaultParams():
 def yamlFaultParams(pStream):
     "Read fault params from YAML file"
     # NOTE: We assume pStream is a valid YAML stream
-    params = yaml.load(pStream)
+    params = yaml.safe_load(pStream)
     return params
 
 
