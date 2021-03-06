@@ -1,0 +1,17 @@
+FROM continuumio/anaconda
+RUN mkdir -p app
+WORKDIR app/
+COPY . .
+RUN conda install -y --quiet jupyter scikit-learn yaml tensorflow pandas
+RUN pip install keras==2.3.0
+EXPOSE 8888/tcp
+
+ENV TINI_VERSION v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/bin/tini
+RUN chmod +x /usr/bin/tini
+
+ENV PYTHONPATH "${PYTHONPATH}:/tf/app"
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+CMD ["jupyter", "notebook", "--port=8888", "--no-browser", "--ip=0.0.0.0", "--allow-root"]

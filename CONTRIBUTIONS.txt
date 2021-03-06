@@ -15,3 +15,6 @@ A: Added support for different fault injection modes, and fixed bugs
 
 N: Lucas Palazzi
 A: Added test suite and automation for installation
+
+N: Marc NGUYEN
+A: Added Docker environement
