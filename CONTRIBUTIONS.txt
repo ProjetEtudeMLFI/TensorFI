@@ -18,3 +18,4 @@ A: Added test suite and automation for installation
 
 N: Marc NGUYEN
 A: Added Docker environement
+A: Clean some codes in accordance with the PEP8 and the deprecation guide.
