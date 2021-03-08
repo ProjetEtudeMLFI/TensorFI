@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 """ Auto Encoder Example.
 
 Build a 2 layers auto-encoder with TensorFlow to compress images to a
@@ -37,9 +36,9 @@ display_step = 1000
 examples_to_show = 10
 
 # Network Parameters
-num_hidden_1 = 256 # 1st layer num features
-num_hidden_2 = 128 # 2nd layer num features (the latent dim)
-num_input = 784 # MNIST data input (img shape: 28*28)
+num_hidden_1 = 256  # 1st layer num features
+num_hidden_2 = 128  # 2nd layer num features (the latent dim)
+num_input = 784  # MNIST data input (img shape: 28*28)
 
 # tf Graph input (only pictures)
 X = tf.placeholder("float", [None, num_input])
@@ -57,26 +56,30 @@ biases = {
     'decoder_b2': tf.Variable(tf.random_normal([num_input])),
 }
 
+
 # Building the encoder
 def encoder(x):
     # Encoder Hidden layer with sigmoid activation #1
-    layer_1 = tf.nn.sigmoid(tf.add(tf.matmul(x, weights['encoder_h1']),
-                                   biases['encoder_b1']))
+    layer_1 = tf.nn.sigmoid(
+        tf.add(tf.matmul(x, weights['encoder_h1']), biases['encoder_b1']))
     # Encoder Hidden layer with sigmoid activation #2
-    layer_2 = tf.nn.sigmoid(tf.add(tf.matmul(layer_1, weights['encoder_h2']),
-                                   biases['encoder_b2']))
+    layer_2 = tf.nn.sigmoid(
+        tf.add(tf.matmul(layer_1, weights['encoder_h2']),
+               biases['encoder_b2']))
     return layer_2
 
 
 # Building the decoder
 def decoder(x):
     # Decoder Hidden layer with sigmoid activation #1
-    layer_1 = tf.nn.sigmoid(tf.add(tf.matmul(x, weights['decoder_h1']),
-                                   biases['decoder_b1']))
+    layer_1 = tf.nn.sigmoid(
+        tf.add(tf.matmul(x, weights['decoder_h1']), biases['decoder_b1']))
     # Decoder Hidden layer with sigmoid activation #2
-    layer_2 = tf.nn.sigmoid(tf.add(tf.matmul(layer_1, weights['decoder_h2']),
-                                   biases['decoder_b2']))
+    layer_2 = tf.nn.sigmoid(
+        tf.add(tf.matmul(layer_1, weights['decoder_h2']),
+               biases['decoder_b2']))
     return layer_2
+
 
 # Construct model
 encoder_op = encoder(X)
@@ -96,13 +99,13 @@ init = tf.global_variables_initializer()
 
 # Start Training
 # Start a new TF session
-with tf.Session() as sess:
+with tf.compat.v1.Session() as sess:
 
     # Run the initializer
     sess.run(init)
 
     # Training
-    for i in range(1, num_steps+1):
+    for i in range(1, num_steps + 1):
         # Prepare Data
         # Get the next batch of MNIST data (only images are needed, not labels)
         batch_x, _ = mnist.train.next_batch(batch_size)
@@ -122,14 +125,17 @@ with tf.Session() as sess:
     numFaults = 10
     canvas_faulty = {}
     for i in range(numFaults):
-    	canvas_faulty[i] = np.empty((28 * n, 28 * n))
+        canvas_faulty[i] = np.empty((28 * n, 28 * n))
 
     # Insert fault injection code here before image reconstruction
-    fi = ti.TensorFI( sess, name = "AutoEncoder", logLevel = 50, disableInjections = True)  
-    
-    # Make the log files in TensorBoard	
+    fi = ti.TensorFI(sess,
+                     name="AutoEncoder",
+                     logLevel=50,
+                     disableInjections=True)
+
+    # Make the log files in TensorBoard
     logs_path = "./logs"
-    logWriter = tf.summary.FileWriter( logs_path, sess.graph )
+    logWriter = tf.summary.FileWriter(logs_path, sess.graph)
 
     # Start the testing runs
     for i in range(n):
@@ -149,31 +155,31 @@ with tf.Session() as sess:
             # Draw the reconstructed digits
             canvas_recon[i * 28:(i + 1) * 28, j * 28:(j + 1) * 28] = \
                 g[j].reshape([28, 28])
-  
-	config = ti.getFIConfig() 
-	config.injectMap[ ti.Ops.ADD ] = float(1.0/numFaults)
 
-	# Do the injections for 10 probability values	
-	for k in range(numFaults):
+        config = ti.getFIConfig()
+        config.injectMap[ti.Ops.ADD] = float(1.0 / numFaults)
 
-   	 	# Do another session run with injections enabled
-        	fi.turnOnInjections()
-		g = sess.run( useCached = True )
-		fi.turnOffInjections()
+        # Do the injections for 10 probability values
+        for k in range(numFaults):
 
-        	# Display reconstructed images with faults
-        	for j in range(n):
-            		# Draw the reconstructed digits
-            		canvas_faulty[k][i * 28:(i + 1) * 28, j * 28:(j + 1) * 28] = \
-                		g[j].reshape([28, 28])
-		# End for j	
+            # Do another session run with injections enabled
+            fi.turnOnInjections()
+            g = sess.run(useCached=True)
+            fi.turnOffInjections()
 
-		# Increment the probability of injections by 0.1
-		config.injectMap[ ti.Ops.ADD ]  += float(1.0/numFaults)
+            # Display reconstructed images with faults
+            for j in range(n):
+                # Draw the reconstructed digits
+                canvas_faulty[k][i * 28:(i + 1) * 28, j * 28:(j + 1) * 28] = \
+                    g[j].reshape([28, 28])
+# End for j
 
-	# End for k
+# Increment the probability of injections by 0.1
+            config.injectMap[ti.Ops.ADD] += float(1.0 / numFaults)
 
-    imageName = "Tests/Images/autoencoder"	
+# End for k
+
+    imageName = "Tests/Images/autoencoder"
 
     print("Original Images")
     plt.figure(figsize=(n, n))
@@ -186,11 +192,11 @@ with tf.Session() as sess:
     plt.savefig(imageName + "-reconstructed.png")
 
     print("Reconstructed Images - with faults")
-    for k in range(numFaults):	
- 	prob = float((k+1) * 1.0/numFaults) 
-	print("Fault probability = ", prob)
-    	plt.figure(figsize=(n, n))
-    	plt.imshow(canvas_faulty[k], origin="upper", cmap="gray")
-    	plt.savefig(imageName + "-faulty-" + str(prob) + ".png")
+    for k in range(numFaults):
+        prob = float((k + 1) * 1.0 / numFaults)
+        print("Fault probability = ", prob)
+        plt.figure(figsize=(n, n))
+        plt.imshow(canvas_faulty[k], origin="upper", cmap="gray")
+        plt.savefig(imageName + "-faulty-" + str(prob) + ".png")
 
     print("Done plotting")

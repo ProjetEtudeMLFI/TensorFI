@@ -390,7 +390,7 @@ def injectFaultAdd(a, b):
     "Function to call injectFault on Add nodes"
     logging.debug("Calling Operator Add " + getArgs(a, b))
     resOp = tf.add(a, b)
-    with tf.Session():
+    with tf.compat.v1.Session():
         res = resOp.eval()
     res = condPerturb(Ops.ADD, res)
     if logReturn:
@@ -527,7 +527,7 @@ def injectFaultOneHot(a, b, c, d):
     logging.debug("Calling Operator One Hot " + getArgs(a, b, c, d))
     # TF adds two default arguments, so we need to pass them as well
     resOp = tf.one_hot(a, b, c, d)
-    with tf.Session():
+    with tf.compat.v1.Session():
         res = resOp.eval()
     res = condPerturb(Ops.ONE_HOT, res)
     if logReturn:
@@ -540,7 +540,7 @@ def injectFaultMatMul(a, b):
     logging.debug("Calling Operator MatMul " + getArgs(a, b))
 
     matmul = tf.matmul(a, b)
-    with tf.Session():
+    with tf.compat.v1.Session():
         res = matmul.eval()
 
     # res = np.matmul(a, b)
@@ -554,7 +554,7 @@ def injectFaultArgMax(a, b):
     "Function to call injectFault on ArgMax"
     logging.debug("Calling Operator ArgMax " + getArgs(a, b))
     resOp = tf.argmax(a, b)
-    with tf.Session():
+    with tf.compat.v1.Session():
         res = resOp.eval()
     res = condPerturb(Ops.ARGMAX, res)
     if logReturn:
@@ -637,7 +637,7 @@ def injectFaultConv2D(a, b, strides, padding):
     "Function to call injectFault on Conv2D"
     logging.debug("Calling Operator conv2D " + getArgs(a, b))
     conv = tf.nn.conv2d(a, b, strides=strides.tolist(), padding=padding)
-    with tf.Session():
+    with tf.compat.v1.Session():
         res = conv.eval()
     res = condPerturb(Ops.CONV2D, res)
     if logReturn:
@@ -649,7 +649,7 @@ def injectFaultRelu(a):
     "Function to call injectFault on RelU"
     logging.debug("Calling Operator RelU " + getArgs(a))
     relu = tf.nn.relu(a)
-    with tf.Session():
+    with tf.compat.v1.Session():
         res = relu.eval()
     res = condPerturb(Ops.RELU, res)
     if logReturn:
@@ -663,7 +663,7 @@ def injectFaultMaxPool(a, ksize, strides, padding):
                              ksize=ksize.tolist(),
                              strides=strides.tolist(),
                              padding=padding)
-    with tf.Session():
+    with tf.compat.v1.Session():
         res = maxpool.eval()
     res = condPerturb(Ops.MAXPOOL, res)
     if logReturn:
@@ -688,7 +688,7 @@ def injectFaultUnstack(a, b, c):
     # This is the same as Unpack in newer versions of TF
     logging.debug("Calling Operator Unstack " + getArgs(a, b, c))
     resOp = tf.unstack(a, b, c)
-    with tf.Session():
+    with tf.compat.v1.Session():
         res = resOp.eval()
     if logReturn:
         logging.debug("\tReturning from Unstack " + str(res))
@@ -700,7 +700,7 @@ def injectFaultStridedSlice(a, b, c, d):
     logging.debug("Calling Operator StridedSlice " + getArgs(a, b, c, d))
     # FIXME: Implement this functionality
     resOp = tf.strided_slice(a, b, c, d)
-    with tf.Session():
+    with tf.compat.v1.Session():
         res = resOp.eval()
     res = condPerturb(Ops.STRIDEDSLICE, res)
     if logReturn:
@@ -745,7 +745,7 @@ def injectFaultSoftmax(a):
     "Function to call injectFault on Softmax"
     logging.debug("Calling Operator Softmax " + getArgs(a))
     resOp = tf.nn.softmax(a)
-    with tf.Session():
+    with tf.compat.v1.Session():
         res = resOp.eval()
     res = condPerturb(Ops.SOFTMAX, res)
     if logReturn:
@@ -906,7 +906,7 @@ def injectFaultLRN(a, bias, alpha, beta):
 
     # depth_radius = 2
     resOp = tf.nn.lrn(a, 2, bias=bias, alpha=alpha, beta=beta)
-    with tf.Session():
+    with tf.compat.v1.Session():
         res = resOp.eval()
     res = condPerturb(Ops.LRN, res)
     if logReturn:
@@ -919,7 +919,7 @@ def injectFaultELU(a):
     logging.debug("Calling Operator ELU " + getArgs(a))
 
     relu = tf.nn.elu(a)
-    with tf.Session():
+    with tf.compat.v1.Session():
         res = relu.eval()
     res = condPerturb(Ops.ELU, res)
     if logReturn:
@@ -931,7 +931,7 @@ def injectFaultRandomUniform(a):
     "Function to call injectFault on Random Uniform"
     logging.debug("Calling Operator RandomUniform" + getArgs(a))
     ru = tf.random_uniform(a)
-    with tf.Session():
+    with tf.compat.v1.Session():
         res = ru.eval()
     res = condPerturb(Ops.RANDOM_UNIFORM, res)
     if logReturn:

@@ -18,13 +18,14 @@ import sys
 
 # Import MNIST data
 from tensorflow.examples.tutorials.mnist import input_data
-mnist = input_data.read_data_sets("./experimentalTest/mnistData/", one_hot=True)
+mnist = input_data.read_data_sets("./experimentalTest/mnistData/",
+                                  one_hot=True)
 
 logPath = sys.argv[1]
 
 # In this example, we limit mnist data
-Xtr, Ytr = mnist.train.next_batch(5000) #5000 for training (nn candidates)
-Xte, Yte = mnist.test.next_batch(len(mnist.test.labels)) #200 for testing
+Xtr, Ytr = mnist.train.next_batch(5000)  #5000 for training (nn candidates)
+Xte, Yte = mnist.test.next_batch(len(mnist.test.labels))  #200 for testing
 
 # tf Graph Input
 xtr = tf.placeholder("float", [None, 784])
@@ -32,7 +33,8 @@ xte = tf.placeholder("float", [784])
 
 # Nearest Neighbor calculation using L1 Distance
 # Calculate L1 Distance
-distance = tf.reduce_sum(tf.abs(tf.add(xtr, tf.negative(xte))), reduction_indices=1)
+distance = tf.reduce_sum(tf.abs(tf.add(xtr, tf.negative(xte))),
+                         reduction_indices=1)
 # Prediction: Get min distance index (Nearest neighbor)
 pred = tf.arg_min(distance, 0)
 
@@ -42,14 +44,17 @@ accuracy = 0.
 init = tf.global_variables_initializer()
 
 # Start training
-with tf.Session() as sess:
+with tf.compat.v1.Session() as sess:
 
     # Run the initializer
     sess.run(init)
 
-    # Add the fault injection code here to instrument the graph 
-    fi = ti.TensorFI(sess, name = "NearestNeighbor", logLevel = 50, disableInjections = True)
-    
+    # Add the fault injection code here to instrument the graph
+    fi = ti.TensorFI(sess,
+                     name="NearestNeighbor",
+                     logLevel=50,
+                     disableInjections=True)
+
     # loop over test data
     for i in range(len(Xte)):
         # Get nearest neighbor
@@ -59,11 +64,9 @@ with tf.Session() as sess:
             "True Class:", np.argmax(Yte[i]))
         # Calculate accuracy
         if np.argmax(Ytr[nn_index]) == np.argmax(Yte[i]):
-            accuracy += 1./len(Xte)
+            accuracy += 1. / len(Xte)
     print("Accuracy (Without FI):", accuracy)
     orgAcy = accuracy
-
-
 
     # Turn on TensorFI to inject faults in inference phase
     fi.turnOnInjections()
@@ -76,15 +79,14 @@ with tf.Session() as sess:
             "True Class:", np.argmax(Yte[i]))
         # Calculate accuracy
         if np.argmax(Ytr[nn_index]) == np.argmax(Yte[i]):
-            accuracy += 1./len(Xte)
+            accuracy += 1. / len(Xte)
     print("Accuracy (With FI):", accuracy)
     fiAcy = accuracy
 
     with open(logPath, 'a') as of:
-        of.write(`orgAcy` + "," + `fiAcy` + "," + `(orgAcy - fiAcy)` + '\n')
+        of.write( ` orgAcy ` + "," + ` fiAcy ` + "," + ` (orgAcy - fiAcy) ` +
+                  '\n')
 
-
-    # Make the log files in TensorBoard	
+    # Make the log files in TensorBoard
     logs_path = "./logs"
-    logWriter = tf.summary.FileWriter( logs_path, sess.graph )
-
+    logWriter = tf.summary.FileWriter(logs_path, sess.graph)

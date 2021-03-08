@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 """ Generative Adversarial Networks (GAN).
 
 Using generative adversarial networks (GAN) to generate digit images from a
@@ -39,14 +38,16 @@ batch_size = 128
 learning_rate = 0.0002
 
 # Network Params
-image_dim = 784 # 28*28 pixels
+image_dim = 784  # 28*28 pixels
 gen_hidden_dim = 256
 disc_hidden_dim = 256
-noise_dim = 100 # Noise data points
+noise_dim = 100  # Noise data points
+
 
 # A custom initialization (see Xavier Glorot init)
 def glorot_init(shape):
     return tf.random_normal(shape=shape, stddev=1. / tf.sqrt(shape[0] / 2.))
+
 
 # Store layers weight & bias
 weights = {
@@ -84,10 +85,15 @@ def discriminator(x):
     out_layer = tf.nn.sigmoid(out_layer)
     return out_layer
 
+
 # Build Networks
 # Network Inputs
-gen_input = tf.placeholder(tf.float32, shape=[None, noise_dim], name='input_noise')
-disc_input = tf.placeholder(tf.float32, shape=[None, image_dim], name='disc_input')
+gen_input = tf.placeholder(tf.float32,
+                           shape=[None, noise_dim],
+                           name='input_noise')
+disc_input = tf.placeholder(tf.float32,
+                            shape=[None, image_dim],
+                            name='disc_input')
 
 # Build Generator Network
 gen_sample = generator(gen_input)
@@ -108,12 +114,16 @@ optimizer_disc = tf.train.AdamOptimizer(learning_rate=learning_rate)
 # By default in TensorFlow, all variables are updated by each optimizer, so we
 # need to precise for each one of them the specific variables to update.
 # Generator Network Variables
-gen_vars = [weights['gen_hidden1'], weights['gen_out'],
-            biases['gen_hidden1'], biases['gen_out']]
+gen_vars = [
+    weights['gen_hidden1'], weights['gen_out'], biases['gen_hidden1'],
+    biases['gen_out']
+]
 
 # Discriminator Network Variables
-disc_vars = [weights['disc_hidden1'], weights['disc_out'],
-            biases['disc_hidden1'], biases['disc_out']]
+disc_vars = [
+    weights['disc_hidden1'], weights['disc_out'], biases['disc_hidden1'],
+    biases['disc_out']
+]
 
 # Create training operations
 train_gen = optimizer_gen.minimize(gen_loss, var_list=gen_vars)
@@ -142,13 +152,14 @@ def generateImages(sess, imageName):
     # Save the generated figure
     plt.savefig(imageName)
 
+
 # Start training
-with tf.Session() as sess:
+with tf.compat.v1.Session() as sess:
 
     # Run the initializer
     sess.run(init)
 
-    for i in range(1, num_steps+1):
+    for i in range(1, num_steps + 1):
         # Prepare Data
         # Get the next batch of MNIST data (only images are needed, not labels)
         batch_x, _ = mnist.train.next_batch(batch_size)
@@ -160,22 +171,23 @@ with tf.Session() as sess:
         _, _, gl, dl = sess.run([train_gen, train_disc, gen_loss, disc_loss],
                                 feed_dict=feed_dict)
         if i % 1000 == 0 or i == 1:
-            print('Step %i: Generator Loss: %f, Discriminator Loss: %f' % (i, gl, dl))
+            print('Step %i: Generator Loss: %f, Discriminator Loss: %f' %
+                  (i, gl, dl))
 
-    imageName = "Tests/Images/gan"	
-	
+    imageName = "Tests/Images/gan"
+
     # Generate images from noise, using the generator network.
     generateImages(sess, imageName + "-original")
 
     # plt.waitforbuttonpress()
 
     # Instrument the graph for fault injection
-    # But don't inject faults while we're doing the correct run	
-    fi = ti.TensorFI( sess, disableInjections = True, logLevel = 50 )
-  
-    # Create a log for visualizng in TensorBoard (during training) 
+    # But don't inject faults while we're doing the correct run
+    fi = ti.TensorFI(sess, disableInjections=True, logLevel=50)
+
+    # Create a log for visualizng in TensorBoard (during training)
     logs_path = "./logs"
-    logWriter = tf.summary.FileWriter( logs_path, sess.graph )
-  		
+    logWriter = tf.summary.FileWriter(logs_path, sess.graph)
+
     generateImages(sess, imageName + "-faulty.png")
     #  plt.waitforbuttonpress()

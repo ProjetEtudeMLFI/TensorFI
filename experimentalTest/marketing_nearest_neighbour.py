@@ -20,22 +20,21 @@ import preprocessing
 import sys
 
 logPath = sys.argv[1]
- 
 
 ######
 data = pandas.read_csv("./experimentalTest/marketing.csv")
 data = preprocessing.cleanDataForClassification(data, "class")
- 
+
 labels = []
 for d in data['class']:
     if int(d) == 0:
-        labels.append([0,1])
+        labels.append([0, 1])
     else:
-        labels.append([1,0])
+        labels.append([1, 0])
 labels = pandas.DataFrame(labels).values
 ######
- 
-batch_xs = data.drop("class",axis=1).values
+
+batch_xs = data.drop("class", axis=1).values
 batch_ys = labels
 Xtr = batch_xs[:5000]
 Ytr = batch_ys[:5000]
@@ -48,7 +47,8 @@ xte = tf.placeholder("float", [20])
 
 # Nearest Neighbor calculation using L1 Distance
 # Calculate L1 Distance
-distance = tf.reduce_sum(tf.abs(tf.add(xtr, tf.negative(xte))), reduction_indices=1)
+distance = tf.reduce_sum(tf.abs(tf.add(xtr, tf.negative(xte))),
+                         reduction_indices=1)
 # Prediction: Get min distance index (Nearest neighbor)
 pred = tf.arg_min(distance, 0)
 
@@ -58,14 +58,17 @@ accuracy = 0.
 init = tf.global_variables_initializer()
 
 # Start training
-with tf.Session() as sess:
+with tf.compat.v1.Session() as sess:
 
     # Run the initializer
     sess.run(init)
 
-    # Add the fault injection code here to instrument the graph 
-    fi = ti.TensorFI(sess, name = "NearestNeighbor", logLevel = 50, disableInjections = True)
-    
+    # Add the fault injection code here to instrument the graph
+    fi = ti.TensorFI(sess,
+                     name="NearestNeighbor",
+                     logLevel=50,
+                     disableInjections=True)
+
     # loop over test data
     for i in range(len(Xte)):
         # Get nearest neighbor
@@ -75,11 +78,9 @@ with tf.Session() as sess:
             "True Class:", np.argmax(Yte[i]))
         # Calculate accuracy
         if np.argmax(Ytr[nn_index]) == np.argmax(Yte[i]):
-            accuracy += 1./len(Xte)
+            accuracy += 1. / len(Xte)
     orgAccuracy = accuracy
     print("Accuracy (Without FI):", accuracy)
-
-
 
     # Turn on TensorFI to inject faults in inference phase
     fi.turnOnInjections()
@@ -92,15 +93,14 @@ with tf.Session() as sess:
             "True Class:", np.argmax(Yte[i]))
         # Calculate accuracy
         if np.argmax(Ytr[nn_index]) == np.argmax(Yte[i]):
-            accuracy += 1./len(Xte)
+            accuracy += 1. / len(Xte)
     print("Accuracy (Without FI):", orgAccuracy)
     print("Accuracy (With FI):", accuracy)
 
-
-    # Make the log files in TensorBoard	
+    # Make the log files in TensorBoard
     logs_path = "./logs"
-    logWriter = tf.summary.FileWriter( logs_path, sess.graph )
+    logWriter = tf.summary.FileWriter(logs_path, sess.graph)
 
     with open(logPath, 'a') as of:
-        of.write(`orgAccuracy` + "," + `accuracy` + "," + `(orgAccuracy - accuracy)` + '\n')
-
+        of.write( ` orgAccuracy ` + "," + ` accuracy ` + "," +
+                  ` (orgAccuracy - accuracy) ` + '\n')
