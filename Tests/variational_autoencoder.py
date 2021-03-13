@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 """ Variational Auto-Encoder Example.
 
 Using a variational auto-encoder to generate digits images from noise.
@@ -41,13 +40,15 @@ num_steps = 30000
 batch_size = 64
 
 # Network Parameters
-image_dim = 784 # MNIST images are 28x28 pixels
+image_dim = 784  # MNIST images are 28x28 pixels
 hidden_dim = 512
 latent_dim = 2
+
 
 # A custom initialization (see Xavier Glorot init)
 def glorot_init(shape):
     return tf.random_normal(shape=shape, stddev=1. / tf.sqrt(shape[0] / 2.))
+
 
 # Variables
 weights = {
@@ -73,7 +74,10 @@ z_mean = tf.matmul(encoder, weights['z_mean']) + biases['z_mean']
 z_std = tf.matmul(encoder, weights['z_std']) + biases['z_std']
 
 # Sampler: Normal (gaussian) random distribution
-eps = tf.random_normal(tf.shape(z_std), dtype=tf.float32, mean=0., stddev=1.0,
+eps = tf.random_normal(tf.shape(z_std),
+                       dtype=tf.float32,
+                       mean=0.,
+                       stddev=1.0,
                        name='epsilon')
 z = z_mean + tf.exp(z_std / 2) * eps
 
@@ -95,6 +99,7 @@ def vae_loss(x_reconstructed, x_true):
     kl_div_loss = -0.5 * tf.reduce_sum(kl_div_loss, 1)
     return tf.reduce_mean(encode_decode_loss + kl_div_loss)
 
+
 loss_op = vae_loss(decoder, input_image)
 optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate)
 train_op = optimizer.minimize(loss_op)
@@ -103,12 +108,12 @@ train_op = optimizer.minimize(loss_op)
 init = tf.global_variables_initializer()
 
 # Start training
-with tf.Session() as sess:
+with tf.compat.v1.Session() as sess:
 
     # Run the initializer
     sess.run(init)
 
-    for i in range(1, num_steps+1):
+    for i in range(1, num_steps + 1):
         # Prepare Data
         # Get the next batch of MNIST data (only images are needed, not labels)
         batch_x, _ = mnist.train.next_batch(batch_size)
@@ -124,17 +129,22 @@ with tf.Session() as sess:
     noise_input = tf.placeholder(tf.float32, shape=[None, latent_dim])
 
     # Rebuild the decoder to create image from noise
-    decoder = tf.matmul(noise_input, weights['decoder_h1']) + biases['decoder_b1']
+    decoder = tf.matmul(noise_input,
+                        weights['decoder_h1']) + biases['decoder_b1']
     decoder = tf.nn.tanh(decoder)
-    decoder = tf.matmul(decoder, weights['decoder_out']) + biases['decoder_out']
+    decoder = tf.matmul(decoder,
+                        weights['decoder_out']) + biases['decoder_out']
     decoder = tf.nn.sigmoid(decoder)
 
     # Insert fault injection code here before image reconstruction
-    fi = ti.TensorFI( sess, name = "VariationalAutoEncoder", logLevel = 20, disableInjections = True)  
-    
-    # Make the log files in TensorBoard	
+    fi = ti.TensorFI(sess,
+                     name="VariationalAutoEncoder",
+                     logLevel=20,
+                     disableInjections=True)
+
+    # Make the log files in TensorBoard
     logs_path = "./logs"
-    logWriter = tf.summary.FileWriter( logs_path, sess.graph )
+    logWriter = tf.summary.FileWriter(logs_path, sess.graph)
 
     # Building a manifold of generated digits
     n = 20
@@ -150,13 +160,13 @@ with tf.Session() as sess:
             x_mean = sess.run(decoder, feed_dict={noise_input: z_mu})
             canvas[(n - i - 1) * 28:(n - i) * 28, j * 28:(j + 1) * 28] = \
             x_mean[0].reshape(28, 28)
-	    
-	    # Perform fault injections
-	    fi.turnOnInjections()	
+
+            # Perform fault injections
+            fi.turnOnInjections()
             x_mean = sess.run(decoder, feed_dict={noise_input: z_mu})
             faulty_canvas[(n - i - 1) * 28:(n - i) * 28, j * 28:(j + 1) * 28] = \
             x_mean[0].reshape(28, 28)
-	    fi.turnOffInjections()
+            fi.turnOffInjections()
 
     # Show the original canvas
     print("With no faults injected")

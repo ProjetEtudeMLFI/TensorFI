@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 """ Neural Network.
 
 A 2-Hidden Layers Fully Connected Neural Network (a.k.a Multilayer Perceptron)
@@ -32,12 +31,12 @@ batch_size = 128
 display_step = 100
 
 # Network Parameters
-n_hidden_1 = 256 # 1st layer number of neurons
-n_hidden_2 = 256 # 2nd layer number of neurons
-n_hidden_3 = 256 # 3rd layer number of neurons
-n_hidden_4 = 256 
-num_input = 784 # MNIST data input (img shape: 28*28)
-num_classes = 10 # MNIST total classes (0-9 digits)
+n_hidden_1 = 256  # 1st layer number of neurons
+n_hidden_2 = 256  # 2nd layer number of neurons
+n_hidden_3 = 256  # 3rd layer number of neurons
+n_hidden_4 = 256
+num_input = 784  # MNIST data input (img shape: 28*28)
+num_classes = 10  # MNIST total classes (0-9 digits)
 
 # tf Graph input
 X = tf.placeholder("float", [None, num_input])
@@ -72,13 +71,14 @@ def neural_net(x):
     out_layer = tf.matmul(layer_4, weights['out']) + biases['out']
     return out_layer
 
+
 # Construct model
 logits = neural_net(X)
 prediction = tf.nn.softmax(logits)
 
 # Define loss and optimizer
-loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
-    logits=logits, labels=Y))
+loss_op = tf.reduce_mean(
+    tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=Y))
 optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 train_op = optimizer.minimize(loss_op)
 
@@ -90,22 +90,25 @@ accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 init = tf.global_variables_initializer()
 
 # Start training
-with tf.Session() as sess:
+with tf.compat.v1.Session() as sess:
 
     # Run the initializer
     sess.run(init)
 
     print("Training now ...")
 
-    for step in range(1, num_steps+1):
+    for step in range(1, num_steps + 1):
         batch_x, batch_y = mnist.train.next_batch(batch_size)
-        
-	# Run optimization op (backprop)
+
+        # Run optimization op (backprop)
         sess.run(train_op, feed_dict={X: batch_x, Y: batch_y})
         if step % display_step == 0 or step == 1:
             # Calculate batch loss and accuracy
-            loss, acc = sess.run([loss_op, accuracy], feed_dict={X: batch_x,
-                                                                 Y: batch_y})
+            loss, acc = sess.run([loss_op, accuracy],
+                                 feed_dict={
+                                     X: batch_x,
+                                     Y: batch_y
+                                 })
             print("Step " + str(step) + ", Minibatch Loss= " + \
                   "{:.4f}".format(loss) + ", Training Accuracy= " + \
                   "{:.3f}".format(acc))
@@ -116,7 +119,10 @@ with tf.Session() as sess:
         accuracy.eval({X: mnist.test.images[:256], Y: mnist.test.labels[:256]}))
 
     # Add the fault injection code here to instrument the graph
-    fi = ti.TensorFI(sess, name = "Neural Network 4", logLevel = 50, disableInjections = False)
+    fi = ti.TensorFI(sess,
+                     name="Neural Network 4",
+                     logLevel=50,
+                     disableInjections=False)
 
     print("Accuracy (with injections):", \
         accuracy.eval({X: mnist.test.images[:256], Y: mnist.test.labels[:256]}))

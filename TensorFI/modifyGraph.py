@@ -10,10 +10,10 @@ from TensorFI import injectFault
 
 
 def createFIFunc(
-    operation,  # type: tf.Operation
-    inputs,  # type: List[tf.Tensor]
-    outputTypes,  # type:  List[tf.dtypes.DType]
-    name  # type: str
+        operation,  # type: tf.Operation
+        inputs,  # type: List[tf.Tensor]
+        outputTypes,  # type:  List[tf.dtypes.DType]
+        name,  # type: str
 ):  # type: (...) -> List[tf.Tensor]
     """Create a tensorflow operation representing a fault injection node"""
     # print "\nCreating FIfunc with ", opType, inputs, outputTypes, name
@@ -25,24 +25,21 @@ def createFIFunc(
         # We have to special case Cast as it's expected to "remember" its type
         # This could be due to a bug in TensorFlow (at least it's not documented)
         fiFunc = injectFault.createInjectFaultCast(outputTypes[0])
-
     elif operation.type in injectFault.opTable:
         # Lookup the opTable and return the corresponding function (injectFault...)
         # This is the default case if there's an injectFault for the function
         fiFunc = injectFault.opTable[operation.type]
     else:
-        # It's not a known operation, so use do not inject.
+        # It's not a known operation, do not inject.
+        logging.warning(
+            "Operation {} should be either added to "
+            "`excludeOps` or should have his injection implemented.".format(
+                operation.type))
         if len(outputTypes) == 0:
-            logging.debug("operator" + str(operation.type) +
-                          " is NOT copied because it doesn't output")
-            return list()
+            fiFunc = injectFault.opTable["Unknown"]
         else:
-            logging.warning("operator" + str(operation.type) +
-                            " is copied with " + str(outputTypes) +
-                            " output types and " +
-                            str(operation._input_types) + " input types")
+            # This is a temporary fix.
             return [tf.Tensor(operation, value_index=0, dtype=outputTypes[0])]
-        # pass
 
     # fiFunc should have been initialized (fiFunc != None)
     if fiFunc is None:
@@ -62,9 +59,11 @@ def createFIFunc(
 def excludeOps(op):
     # type: (tf.Operation) -> bool
     "Which operations to exclude from the instrumentation"
-    result = (False or op.type == "Placeholder"
-              or op.type.startswith("Variable") or op.type == "Const"
-              or op.type == "NoOp")
+    result = (False
+              or op.type in ("Placeholder", "Const", "NoOp", "VarHandleOp",
+                             "VarIsInitializedOp", "ReadVariableOp",
+                             "AssignVariableOp", "AssignAddVariableOp")
+              or op.type.startswith("Variable"))
     return result
 
 

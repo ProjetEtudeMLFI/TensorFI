@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 '''
 A logistic regression learning algorithm example using TensorFlow library.
 This example is using the MNIST database of handwritten digits
@@ -25,18 +24,20 @@ batch_size = 100
 display_step = 1
 
 # tf Graph Input
-x = tf.placeholder(tf.float32, [None, 784]) # mnist data image of shape 28*28=784
-y = tf.placeholder(tf.float32, [None, 10]) # 0-9 digits recognition => 10 classes
+x = tf.placeholder(tf.float32,
+                   [None, 784])  # mnist data image of shape 28*28=784
+y = tf.placeholder(tf.float32,
+                   [None, 10])  # 0-9 digits recognition => 10 classes
 
 # Set model weights
 W = tf.Variable(tf.zeros([784, 10]))
 b = tf.Variable(tf.zeros([10]))
 
 # Construct model
-pred = tf.nn.softmax(tf.matmul(x, W) + b) # Softmax
+pred = tf.nn.softmax(tf.matmul(x, W) + b)  # Softmax
 
 # Minimize error using cross entropy
-cost = tf.reduce_mean(-tf.reduce_sum(y*tf.log(pred), reduction_indices=1))
+cost = tf.reduce_mean(-tf.reduce_sum(y * tf.log(pred), reduction_indices=1))
 # Gradient Descent
 optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
 
@@ -44,7 +45,7 @@ optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
 init = tf.global_variables_initializer()
 
 # Start training
-with tf.Session() as sess:
+with tf.compat.v1.Session() as sess:
 
     # Run the initializer
     sess.run(init)
@@ -52,39 +53,57 @@ with tf.Session() as sess:
     # Training cycle
     for epoch in range(training_epochs):
         avg_cost = 0.
-        total_batch = int(mnist.train.num_examples/batch_size)
+        total_batch = int(mnist.train.num_examples / batch_size)
         # Loop over all batches
         for i in range(total_batch):
             batch_xs, batch_ys = mnist.train.next_batch(batch_size)
             # Run optimization op (backprop) and cost op (to get loss value)
-            _, c = sess.run([optimizer, cost], feed_dict={x: batch_xs,
-                                                          y: batch_ys})
+            _, c = sess.run([optimizer, cost],
+                            feed_dict={
+                                x: batch_xs,
+                                y: batch_ys
+                            })
             # Compute average loss
             avg_cost += c / total_batch
         # Display logs per epoch step
-        if (epoch+1) % display_step == 0:
-            print("Epoch:", '%04d' % (epoch+1), "cost=", "{:.9f}".format(avg_cost))
+        if (epoch + 1) % display_step == 0:
+            print("Epoch:", '%04d' % (epoch + 1), "cost=",
+                  "{:.9f}".format(avg_cost))
 
     print("Optimization Finished!")
 
     # Test model
     correct_prediction = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    
+
     # Calculate accuracy (before fault injections)
-    print("Accuracy:", accuracy.eval({x: mnist.test.images, y: mnist.test.labels}))
-    
-    # Instrument the graph for fault injection 
-    fi = ti.TensorFI(sess, name = "logistReg", logLevel = 30, disableInjections = True)
-    
+    print("Accuracy:",
+          accuracy.eval({
+              x: mnist.test.images,
+              y: mnist.test.labels
+          }))
+
+    # Instrument the graph for fault injection
+    fi = ti.TensorFI(sess,
+                     name="logistReg",
+                     logLevel=30,
+                     disableInjections=True)
+
     # Calculate accuracy (with no fault injections)
-    print("Accuracy (with no injections):", accuracy.eval({x: mnist.test.images, y: mnist.test.labels}))
-    
-    # Make the log files in TensorBoard	
+    print("Accuracy (with no injections):",
+          accuracy.eval({
+              x: mnist.test.images,
+              y: mnist.test.labels
+          }))
+
+    # Make the log files in TensorBoard
     logs_path = "./logs"
-    logWriter = tf.summary.FileWriter( logs_path, sess.graph )
+    logWriter = tf.summary.FileWriter(logs_path, sess.graph)
 
     # Calculate accuracy (with fault injections)
-    fi.turnOnInjections()	
-    print("Accuracy (with injections):", accuracy.eval({x: mnist.test.images, y: mnist.test.labels}))
-
+    fi.turnOnInjections()
+    print("Accuracy (with injections):",
+          accuracy.eval({
+              x: mnist.test.images,
+              y: mnist.test.labels
+          }))

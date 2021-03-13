@@ -11,7 +11,7 @@ from keras.models import load_model
 from keras.objectives import categorical_crossentropy
 from keras.utils import to_categorical
 
-import TensorFI as ti
+import TensorFI.tensorFI as ti
 
 # Setup
 # Random
@@ -55,7 +55,7 @@ inputs_test, outputs_test = inputs[test_inds], outputs_cats[test_inds]
 sess = tf.compat.v1.Session()
 K.set_session(sess)
 
-init = tf.global_variables_initializer()
+init = tf.compat.v1.global_variables_initializer()
 sess.run(init)
 
 # Model
@@ -67,11 +67,11 @@ y = model.output
 
 # Evaluate model
 with sess.as_default():
-    output_value = sess.run([y], feed_dict={x: inputs_test})
-    accuracy = tf.reduce_mean(
-        categorical_accuracy(outputs_test, output_value[0])).eval()
-    loss = tf.reduce_mean(
-        categorical_crossentropy(outputs_test, output_value[0])).eval()
+    y_preds = y.eval(feed_dict={x: inputs_test})
+    accuracy = tf.reduce_mean(categorical_accuracy(outputs_test,
+                                                   y_preds)).eval()
+    loss = tf.reduce_mean(categorical_crossentropy(outputs_test,
+                                                   y_preds)).eval()
     print("Loss/Accuracy (W/O FI) = ", [loss, accuracy])
 
 # Run the model and print the accuracy
@@ -88,13 +88,17 @@ fi.turnOnInjections()
 writer = tf.compat.v1.summary.FileWriter(LOGS_PATH, sess.graph)
 
 with sess.as_default():
-    output_value = sess.run([y], feed_dict={x: inputs_test})
-    accuracy = tf.reduce_mean(
-        categorical_accuracy(outputs_test, output_value[0])).eval()
-    loss = tf.reduce_mean(
-        categorical_crossentropy(outputs_test, output_value[0])).eval()
-    print("Loss/Accuracy (FI) = ", [loss, accuracy])
+    y_preds = y.eval(feed_dict={x: inputs_test})
 
 writer.close()
+fi.turnOffInjections()
+
+with sess.as_default():
+    accuracy = tf.reduce_mean(categorical_accuracy(outputs_test,
+                                                   y_preds)).eval()
+    loss = tf.reduce_mean(categorical_crossentropy(outputs_test,
+                                                   y_preds)).eval()
+    print("Loss/Accuracy (FI) = ", [loss, accuracy])
+
 sess.close()
 print("Done running instrumented model")

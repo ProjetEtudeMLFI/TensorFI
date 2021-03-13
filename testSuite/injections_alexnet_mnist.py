@@ -20,7 +20,7 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 # set logging folder
 from globals import TESTSUITE_DIR
-logDir   = TESTSUITE_DIR + "/faultLogs/"
+logDir = TESTSUITE_DIR + "/faultLogs/"
 confFile = TESTSUITE_DIR + "/confFiles/injections_config.yaml"
 
 # Parameters
@@ -30,24 +30,39 @@ batch_size = 64
 display_step = 20
 
 # Network Parameters
-n_input = 784 # MNIST data input (img shape: 28*28)
-n_classes = 10 # MNIST total classes (0-9 digits)
-dropout = 0.8 # Dropout, probability to keep units
+n_input = 784  # MNIST data input (img shape: 28*28)
+n_classes = 10  # MNIST total classes (0-9 digits)
+dropout = 0.8  # Dropout, probability to keep units
 
 # tf Graph input
 x = tf.placeholder(tf.float32, [None, n_input])
 y = tf.placeholder(tf.float32, [None, n_classes])
-keep_prob = tf.placeholder(tf.float32) # dropout (keep probability)
+keep_prob = tf.placeholder(tf.float32)  # dropout (keep probability)
+
 
 # Create AlexNet model
 def conv2d(name, l_input, w, b):
-    return tf.nn.relu(tf.nn.bias_add(tf.nn.conv2d(l_input, w, strides=[1, 1, 1, 1], padding='SAME'),b), name=name)
+    return tf.nn.relu(tf.nn.bias_add(
+        tf.nn.conv2d(l_input, w, strides=[1, 1, 1, 1], padding='SAME'), b),
+                      name=name)
+
 
 def max_pool(name, l_input, k):
-    return tf.nn.max_pool(l_input, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='SAME', name=name)
+    return tf.nn.max_pool(l_input,
+                          ksize=[1, k, k, 1],
+                          strides=[1, k, k, 1],
+                          padding='SAME',
+                          name=name)
+
 
 def norm(name, l_input, lsize=4):
-    return tf.nn.lrn(l_input, lsize, bias=1.0, alpha=0.001 / 9.0, beta=0.75, name=name)
+    return tf.nn.lrn(l_input,
+                     lsize,
+                     bias=1.0,
+                     alpha=0.001 / 9.0,
+                     beta=0.75,
+                     name=name)
+
 
 def alex_net(_X, _weights, _biases, _dropout):
     # Reshape input picture
@@ -81,14 +96,19 @@ def alex_net(_X, _weights, _biases, _dropout):
     norm3 = tf.nn.dropout(norm3, _dropout)
 
     # Fully connected layer
-    dense1 = tf.reshape(norm3, [-1, _weights['wd1'].get_shape().as_list()[0]]) # Reshape conv3 output to fit dense layer input
-    dense1 = tf.nn.relu(tf.matmul(dense1, _weights['wd1']) + _biases['bd1'], name='fc1') # Relu activation
+    dense1 = tf.reshape(norm3,
+                        [-1, _weights['wd1'].get_shape().as_list()[0]
+                         ])  # Reshape conv3 output to fit dense layer input
+    dense1 = tf.nn.relu(tf.matmul(dense1, _weights['wd1']) + _biases['bd1'],
+                        name='fc1')  # Relu activation
 
-    dense2 = tf.nn.relu(tf.matmul(dense1, _weights['wd2']) + _biases['bd2'], name='fc2') # Relu activation
+    dense2 = tf.nn.relu(tf.matmul(dense1, _weights['wd2']) + _biases['bd2'],
+                        name='fc2')  # Relu activation
 
     # Output, class prediction
     out = tf.matmul(dense2, _weights['out']) + _biases['out']
     return out
+
 
 def run_test(suppress_out=False):
 
@@ -99,13 +119,13 @@ def run_test(suppress_out=False):
     # Import MINST data
     from tensorflow.examples.tutorials.mnist import input_data
     mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
-    
+
     # Store layers weight & bias
     weights = {
         'wc1': tf.Variable(tf.random_normal([3, 3, 1, 64])),
         'wc2': tf.Variable(tf.random_normal([3, 3, 64, 128])),
         'wc3': tf.Variable(tf.random_normal([3, 3, 128, 256])),
-        'wd1': tf.Variable(tf.random_normal([4*4*256, 1024])),
+        'wd1': tf.Variable(tf.random_normal([4 * 4 * 256, 1024])),
         'wd2': tf.Variable(tf.random_normal([1024, 1024])),
         'out': tf.Variable(tf.random_normal([1024, 10]))
     }
@@ -122,11 +142,13 @@ def run_test(suppress_out=False):
     pred = alex_net(x, weights, biases, keep_prob)
 
     # Define loss and optimizer
-    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=y))
-    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
+    cost = tf.reduce_mean(
+        tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=y))
+    optimizer = tf.train.AdamOptimizer(
+        learning_rate=learning_rate).minimize(cost)
 
     # Evaluate model
-    correct_pred = tf.equal(tf.argmax(pred,1), tf.argmax(y,1))
+    correct_pred = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
     # Initializing the variables
@@ -135,38 +157,70 @@ def run_test(suppress_out=False):
     passed_bool = None
 
     # Launch the graph
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         sess.run(init)
         step = 1
         # Keep training until reach max iterations
         while step * batch_size < training_iters:
             batch_xs, batch_ys = mnist.train.next_batch(batch_size)
             # Fit training using batch data
-            sess.run(optimizer, feed_dict={x: batch_xs, y: batch_ys, keep_prob: dropout})
+            sess.run(optimizer,
+                     feed_dict={
+                         x: batch_xs,
+                         y: batch_ys,
+                         keep_prob: dropout
+                     })
             if step % display_step == 0:
                 # Calculate batch accuracy
-                acc = sess.run(accuracy, feed_dict={x: batch_xs, y: batch_ys, keep_prob: 1.})
+                acc = sess.run(accuracy,
+                               feed_dict={
+                                   x: batch_xs,
+                                   y: batch_ys,
+                                   keep_prob: 1.
+                               })
                 # Calculate batch loss
-                loss = sess.run(cost, feed_dict={x: batch_xs, y: batch_ys, keep_prob: 1.})
-                print "Iter " + str(step*batch_size) + ", Minibatch Loss= " + "{:.6f}".format(loss) + ", Training Accuracy= " + "{:.5f}".format(acc)
+                loss = sess.run(cost,
+                                feed_dict={
+                                    x: batch_xs,
+                                    y: batch_ys,
+                                    keep_prob: 1.
+                                })
+                print "Iter " + str(
+                    step *
+                    batch_size) + ", Minibatch Loss= " + "{:.6f}".format(
+                        loss) + ", Training Accuracy= " + "{:.5f}".format(acc)
             step += 1
         print "Optimization Finished!"
         # Calculate accuracy for 256 mnist test images
-        acc1 = sess.run(accuracy, feed_dict={x: mnist.test.images[:256], y: mnist.test.labels[:256], keep_prob: 1.})
+        acc1 = sess.run(accuracy,
+                        feed_dict={
+                            x: mnist.test.images[:256],
+                            y: mnist.test.labels[:256],
+                            keep_prob: 1.
+                        })
         print "Testing Accuracy:", acc1
-        fi = ti.TensorFI(sess, name = "lenet", disableInjections=False, logDir=logDir)
-        acc2 = sess.run(accuracy, feed_dict={x: mnist.test.images[:256], y: mnist.test.labels[:256], keep_prob: 1.})
+        fi = ti.TensorFI(sess,
+                         name="lenet",
+                         disableInjections=False,
+                         logDir=logDir)
+        acc2 = sess.run(accuracy,
+                        feed_dict={
+                            x: mnist.test.images[:256],
+                            y: mnist.test.labels[:256],
+                            keep_prob: 1.
+                        })
         print "Testing Accuracy:", acc2
         if acc1 == acc2:
             passed_bool = True
         else:
             passed_bool = False
-    
+
     if suppress_out:
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
 
     return passed_bool
+
 
 if __name__ == "__main__":
     passed_bool = run_test()

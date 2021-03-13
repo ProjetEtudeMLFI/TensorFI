@@ -19,8 +19,8 @@ from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
 
 # In this example, we limit mnist data
-Xtr, Ytr = mnist.train.next_batch(5000) #5000 for training (nn candidates)
-Xte, Yte = mnist.test.next_batch(200) #200 for testing
+Xtr, Ytr = mnist.train.next_batch(5000)  #5000 for training (nn candidates)
+Xte, Yte = mnist.test.next_batch(200)  #200 for testing
 
 # tf Graph Input
 xtr = tf.placeholder("float", [None, 784])
@@ -28,7 +28,8 @@ xte = tf.placeholder("float", [784])
 
 # Nearest Neighbor calculation using L1 Distance
 # Calculate L1 Distance
-distance = tf.reduce_sum(tf.abs(tf.add(xtr, tf.negative(xte))), reduction_indices=1)
+distance = tf.reduce_sum(tf.abs(tf.add(xtr, tf.negative(xte))),
+                         reduction_indices=1)
 # Prediction: Get min distance index (Nearest neighbor)
 pred = tf.arg_min(distance, 0)
 
@@ -38,15 +39,15 @@ accuracy = 0.
 init = tf.global_variables_initializer()
 
 # Start training
-with tf.Session() as sess:
+with tf.compat.v1.Session() as sess:
 
     # Run the initializer
     sess.run(init)
 
     # Add the fault injection code here to instrument the graph
     # We start injecting the fault right away here unlike earlier
-    fi = ti.TensorFI(sess, name = "NearestNeighbor", logLevel = 50)
-    
+    fi = ti.TensorFI(sess, name="NearestNeighbor", logLevel=50)
+
     # loop over test data
     for i in range(len(Xte)):
         # Get nearest neighbor
@@ -56,10 +57,9 @@ with tf.Session() as sess:
             "True Class:", np.argmax(Yte[i]))
         # Calculate accuracy
         if np.argmax(Ytr[nn_index]) == np.argmax(Yte[i]):
-            accuracy += 1./len(Xte)
+            accuracy += 1. / len(Xte)
     print("Accuracy:", accuracy)
 
-    # Make the log files in TensorBoard	
+    # Make the log files in TensorBoard
     logs_path = "./logs"
-    logWriter = tf.summary.FileWriter( logs_path, sess.graph )
-
+    logWriter = tf.summary.FileWriter(logs_path, sess.graph)
