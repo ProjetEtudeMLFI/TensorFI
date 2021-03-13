@@ -89,12 +89,16 @@ writer = tf.compat.v1.summary.FileWriter(LOGS_PATH, sess.graph)
 
 with sess.as_default():
     y_preds = y.eval(feed_dict={x: inputs_test})
+
+writer.close()
+fi.turnOffInjections()
+
+with sess.as_default():
     accuracy = tf.reduce_mean(categorical_accuracy(outputs_test,
                                                    y_preds)).eval()
     loss = tf.reduce_mean(categorical_crossentropy(outputs_test,
                                                    y_preds)).eval()
     print("Loss/Accuracy (FI) = ", [loss, accuracy])
 
-writer.close()
 sess.close()
 print("Done running instrumented model")

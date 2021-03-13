@@ -8,6 +8,8 @@ from math import floor
 from multiprocessing import Process
 from threading import Thread
 
+import tensorflow as tf
+
 from TensorFI import fiStats
 from TensorFI import modifyGraph as mg
 from TensorFI import printGraph as pg
@@ -171,7 +173,7 @@ class TensorFI:
 
     def __init__(
         self,
-        s,  # This is the session from tensorFlow
+        s,  # type: tf.Session # This is the session from tensorFlow
         configFileName="confFiles/default.yaml",  # Config file for reading fault configuration
         logDir="faultLogs/",  # Log directory for the Fault log (Not to be confused with the logging level below)
         logLevel=logging.DEBUG,  # Logging level {DEBUG=10, INFO=20, ERROR=30}

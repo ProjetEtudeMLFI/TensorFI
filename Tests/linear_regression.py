@@ -77,8 +77,6 @@ with tf.compat.v1.Session() as sess:
 
     print("Testing... (Mean square loss Comparison)")
     accuracy = tf.reduce_sum(tf.pow(pred - Y, 2)) / (2 * test_X.shape[0])
-    accuracy_2 = tf.reduce_sum(tf.pow(pred - Y, 2)) / (2 * test_X.shape[0])
-    accuracy_3 = tf.reduce_sum(tf.pow(pred - Y, 2)) / (2 * test_X.shape[0])
     testing_cost = sess.run(accuracy, feed_dict={
         X: test_X,
         Y: test_Y
@@ -98,7 +96,7 @@ with tf.compat.v1.Session() as sess:
 
     # Calculate accuracy (with no fault injections)
     print("Accuracy (no injections):",
-          sess.run(accuracy_2, feed_dict={
+          sess.run(accuracy, feed_dict={
               X: test_X,
               Y: test_Y
           }))
@@ -106,7 +104,7 @@ with tf.compat.v1.Session() as sess:
     # Calculate accuracy (with fault injections)
     fi.turnOnInjections()
     print("Accuracy (with injections):",
-          sess.run(accuracy_3, feed_dict={
+          sess.run(accuracy, feed_dict={
               X: test_X,
               Y: test_Y
           }))
